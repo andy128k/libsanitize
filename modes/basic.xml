@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mode>
+  <elements>
+    <a href="^(ftp:|http:|https:|mailto:)" href.not="^[^/]+[[:space:]]*:"/>
+    <abbr title=""/>
+    <b/>
+    <blockquote cite="^(http:|https:)" cite.not="^[^/]+[[:space:]]*:"/>
+    <br/>
+    <cite/>
+    <code/>
+    <dd/>
+    <dfn title=""/>
+    <dl/>
+    <dt/>
+    <em/>
+    <i/>
+    <kbd/>
+    <li/>
+    <mark/>
+    <ol/>
+    <p/>
+    <pre/>
+    <q cite="^(http:|https:)" cite.not="^[^/]+[[:space:]]*:"/>
+    <s/>
+    <samp/>
+    <small/>
+    <strike/>
+    <strong/>
+    <sub/>
+    <sup/>
+    <time datetime="" pubdate=""/>
+    <u/>
+    <ul/>
+    <var/>
+  </elements>
+  <whitespace-elements>
+    <address/>
+    <article/>
+    <aside/>
+    <div/>
+    <footer/>
+    <h1/>
+    <h2/>
+    <h3/>
+    <h4/>
+    <h5/>
+    <h6/>
+    <header/>
+    <hgroup/>
+    <hr/>
+    <nav/>
+    <section/>
+  </whitespace-elements>
+</mode>
+

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mode>
+  <elements dir="" lang="" title="" class="">
+    <a href="^(ftp:|http:|https:|mailto:)" href.not="^[^/]+[[:space:]]*:"/>
+    <abbr/>
+    <b/>
+    <bdo/>
+    <blockquote cite="^(http:|https:)" cite.not="^[^/]+[[:space:]]*:"/>
+    <br/>
+    <caption/>
+    <cite/>
+    <code/>
+    <col span="" width=""/>
+    <colgroup span="" width=""/>
+    <dd/>
+    <del cite="^(http:|https:)" cite.not="^[^/]+[[:space:]]*:" datetime=""/>
+    <dfn/>
+    <dl/>
+    <dt/>
+    <em/>
+    <figcaption/>
+    <figure/>
+    <h1/>
+    <h2/>
+    <h3/>
+    <h4/>
+    <h5/>
+    <h6/>
+    <hgroup/>
+    <i/>
+    <img align="" alt="" height="" src="^(http:|https:)" src.not="^[^/]+[[:space:]]*:" width=""/>
+    <ins cite="^(http:|https:)" cite.not="^[^/]+[[:space:]]*:" datetime=""/>
+    <kbd/>
+    <li/>
+    <mark/>
+    <ol start="" reversed="" type=""/>
+    <p/>
+    <pre/>
+    <q cite="^(http:|https:)" cite.not="^[^/]+[[:space:]]*:"/>
+    <rp/>
+    <rt/>
+    <ruby/>
+    <s/>
+    <samp/>
+    <small/>
+    <strike/>
+    <strong/>
+    <sub/>
+    <sup/>
+    <table summary="" width=""/>
+    <tbody/>
+    <td abbr="" axis="" colspan="" rowspan="" width=""/>
+    <tfoot/>
+    <th abbr="" axis="" colspan="" rowspan="" scope="" width=""/>
+    <thead/>
+    <time datetime="" pubdate=""/>
+    <tr/>
+    <u/>
+    <ul type=""/>
+    <var/>
+    <wbr/>
+  </elements>
+  <whitespace-elements>
+    <address/>
+    <article/>
+    <aside/>
+    <footer/>
+    <header/>
+    <hr/>
+    <nav/>
+    <section/>
+  </whitespace-elements>
+</mode>
+
