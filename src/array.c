@@ -7,9 +7,9 @@ static inline size_t align_size(size_t num)
   return (num + 63) / 64 * 64;
 }
 
-Array *array_new(array_item_free_t free_item_func)
+Array *array_new(free_function_t free_item_func)
 {
-  Array *arr = malloc(sizeof(struct _Array));
+  Array *arr = malloc(sizeof(struct Array));
   arr->allocated = 0;
   arr->size = 0;
   arr->items = NULL;
@@ -17,7 +17,7 @@ Array *array_new(array_item_free_t free_item_func)
   return arr;
 }
 
-Array *array_newv(array_item_free_t free_item_func, ...)
+Array *array_newv(free_function_t free_item_func, ...)
 {
   Array *arr = array_new(free_item_func);
   va_list args;
@@ -30,19 +30,13 @@ Array *array_newv(array_item_free_t free_item_func, ...)
 
 void array_free(Array *arr)
 {
-  if (!arr)
-    return;
-
-  if (arr->free_item_func)
+  if (arr)
     {
-      size_t i;
-      for (i = 0; i < arr->size; ++i)
-	if (arr->items[i])
-	  arr->free_item_func(arr->items[i]);
+      array_clean(arr);
+      if (arr->items)
+	free(arr->items);
+      free(arr);
     }
-  if (arr->items)
-    free(arr->items);
-  free(arr);
 }
 
 void array_reserve(Array *arr, size_t count)
@@ -92,6 +86,22 @@ void array_appendv(Array *arr, ...)
   va_start(args, arr);
   array_append_va(arr, args);
   va_end(args);
+}
+
+void array_clean(Array *arr)
+{
+  if (!arr || !arr->size)
+    return;
+
+  if (arr->free_item_func)
+    {
+      size_t i;
+      for (i = 0; i < arr->size; ++i)
+	if (arr->items[i])
+	  arr->free_item_func(arr->items[i]);
+    }
+
+  arr->size = 0;
 }
 
 void *array_find(Array *arr, array_item_predicate_t pred, const void *user_data)

@@ -6,87 +6,9 @@
 
 #include "mode.h"
 
-struct attribute *attribute_new(const char *name, const char *value)
-{
-  struct attribute *attr;
-  size_t name_len;
-  
-  attr = malloc(sizeof(struct attribute));
-  name_len = strlen(name);
-  if (name_len < 4 || strcmp(name + name_len - 4, ".not"))
-    {
-      attr->name = strdup(name);
-      attr->inverted = 0;
-    }
-  else
-    {
-      attr->name = strndup(name, name_len - 4);
-      attr->inverted = 1;
-    }
-
-  if (value && *value)
-    {
-      attr->value = strdup(value);
-      regcomp(&attr->preg, attr->value, REG_EXTENDED | REG_ICASE | REG_NOSUB);
-    }
-  else
-    {
-      attr->value = NULL;
-    }
-  return attr;
-}
-
-void attribute_free(struct attribute *attr)
-{
-  if (!attr)
-    return;
-  free(attr->name);
-  if (attr->value)
-    {
-      free(attr->value);
-      regfree(&attr->preg);
-    }
-  free(attr);
-}
-
-int attribute_check(struct attribute *attr, const char *name, const char *value)
-{
-  if (strcmp(attr->name, name))
-    return 0;
-
-  if (!attr->value)
-    return 1;
-
-  int r = !regexec(&attr->preg, value, 0, NULL, 0);
-  if (attr->inverted)
-    r = !r;
-  return r;
-}
-
-int regexec(const regex_t *preg, const char *string, size_t nmatch,
-            regmatch_t pmatch[], int eflags);
-
-
-struct element *element_new(const char *tagname)
-{
-  struct element *el = malloc(sizeof(struct element));
-  el->tagname = strdup(tagname);
-  el->attributes = array_new((array_item_free_t)attribute_free);
-  return el;
-}
-
-void element_free(struct element *el)
-{
-  if (!el)
-    return;
-  free(el->tagname);
-  array_free(el->attributes);
-  free(el);
-}
-
 struct sanitize_mode *mode_new(int allow_comments,
-			       Array *elements,
-			       Array *common_attributes,
+			       Dict *elements,
+			       Dict *common_attributes,
 			       Array *whitespace_elements)
 {
   struct sanitize_mode *mode;
@@ -97,17 +19,17 @@ struct sanitize_mode *mode_new(int allow_comments,
   if (elements)
     mode->elements = elements;
   else
-    mode->elements = array_new((array_item_free_t)element_free);
+    mode->elements = dict_new((free_function_t)dict_free);
 
   if (common_attributes)
-    mode->common_attributes = elements;
+    mode->common_attributes = common_attributes;
   else
-    mode->common_attributes = array_new((array_item_free_t)attribute_free);
+    mode->common_attributes = dict_new((free_function_t)value_checker_free);
 
   if (whitespace_elements)
     mode->whitespace_elements = whitespace_elements;
   else
-    mode->whitespace_elements = array_new((array_item_free_t)free);
+    mode->whitespace_elements = array_new((free_function_t)free);
 
   return mode;
 }
@@ -117,34 +39,41 @@ void mode_free(struct sanitize_mode *mode)
   if (!mode)
     return;
   if (mode->elements)
-    array_free(mode->elements);
+    dict_free(mode->elements);
   if (mode->common_attributes)
-    array_free(mode->common_attributes);
+    dict_free(mode->common_attributes);
   if (mode->whitespace_elements)
     array_free(mode->whitespace_elements);
   free(mode);
 }
 
-static int element_has_tagname(struct element *el, const char *tagname)
-{
-  return 0 == strcmp(el->tagname, tagname);
-}
-
-struct element *mode_find_element(struct sanitize_mode *mode, const char *tagname)
-{
-  return array_find(mode->elements, (array_item_predicate_t)element_has_tagname, tagname);
-}
-
-static void mode_load_attributes(Array *attributes, xmlNode *node)
+static void mode_load_attributes(Dict *attributes, xmlNode *node)
 {
   xmlAttrPtr attr;
   for (attr = node->properties; attr; attr = attr->next)
     {
-      xmlChar* value = xmlNodeListGetString(node->doc, attr->children, 1);
-      array_append(attributes,
-		   attribute_new((const char *)attr->name,
-				 (const char *)value));
-      xmlFree(value); 
+      size_t name_len;
+      int inverted = 0;
+      ValueChecker *vc;
+      xmlChar* value;
+
+      name_len = strlen((const char *)attr->name);
+      if (name_len >= 4 && !strcmp((const char *)attr->name + name_len - 4, ".not"))
+	{
+	  name_len -= 4;
+	  inverted = 1;
+	}
+
+      vc = dict_getn(attributes, (const char *)attr->name, name_len);
+      if (!vc)
+	{
+	  vc = value_checker_new();
+	  dict_replacen(attributes, (const char *)attr->name, name_len, vc);
+	}
+
+      value = xmlNodeListGetString(node->doc, attr->children, 1);
+      value_checker_add_regex(vc, (const char *)value, inverted);
+      xmlFree(value);
     }
 }
 
@@ -195,9 +124,9 @@ struct sanitize_mode *mode_load(const char *filename)
 	  for (child = node->children; child; child = child->next)
 	    if (child->type == XML_ELEMENT_NODE)
 	      {
-		struct element *el = element_new((const char *)child->name);
-		mode_load_attributes(el->attributes, child);
-		array_append(mode->elements, el);
+		Dict *attributes = dict_new((free_function_t)value_checker_free);
+		mode_load_attributes(attributes, child);
+		dict_replace(mode->elements, (const char *)child->name, attributes);
 	      }
 	}
       else if (!xmlStrcmp(node->name, BAD_CAST("whitespace_elements")) ||

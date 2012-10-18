@@ -4,39 +4,34 @@
 #include <libxml/HTMLparser.h>
 #include "sanitize.h"
 
-struct attribute_check_data
-{
-  const char *name;
-  char *value;
-};
-
-static int attribute_check_predicate(struct attribute *attr, struct attribute_check_data *check_data)
-{
-  return attribute_check(attr, check_data->name, check_data->value);
-}
-
 static int clean_element(xmlNodePtr element, struct sanitize_mode *mode)
 {
   xmlNodePtr item, next;
-  struct element *el;
+  Dict *attributes;
 
-  el = mode_find_element(mode, (const char *)element->name);
+  attributes = dict_get(mode->elements, (const char *)element->name);
 
-  if (el)
+  if (attributes)
     {
+      /* element is allowed */
+
       xmlAttrPtr attr, next;
-      struct attribute_check_data check_data;
+      ValueChecker *vc1, *vc2;
+      xmlChar *value;
       for (attr = element->properties; attr; attr = next)
         {
           next = attr->next;
-	  check_data.name = (const char *)attr->name;
-	  check_data.value = (char *)xmlNodeListGetString(element->doc, attr->children, 1);
+	  value = xmlNodeListGetString(element->doc, attr->children, 1);
 
-          if (!array_find(el->attributes, (array_item_predicate_t)attribute_check_predicate, &check_data) &&
-	      !array_find(mode->common_attributes, (array_item_predicate_t)attribute_check_predicate, &check_data))
-            xmlUnsetProp(element, attr->name);
+	  vc1 = dict_get(attributes, (const char *)attr->name);
+	  vc2 = dict_get(mode->common_attributes, (const char *)attr->name);
+
+	  if (!(value_checker_check(vc1, (const char *)value) || value_checker_check(vc2, (const char *)value)))
+	    {
+	      xmlUnsetProp(element, attr->name);
+	    }
 	  
-	  xmlFree(check_data.value); 
+	  xmlFree(value);
         }
       return 1;
     }
