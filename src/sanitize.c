@@ -4,9 +4,25 @@
 #include <libxml/HTMLparser.h>
 #include "sanitize.h"
 
-static int clean_element(xmlNodePtr element, struct sanitize_mode *mode)
+static unsigned move_children_before(xmlNodePtr element, xmlNodePtr before)
 {
   xmlNodePtr item, next;
+  unsigned count = 0;
+
+  for (item = element->children; item; item = next)
+    {
+      next = item->next;
+	  
+      xmlUnlinkNode(item);
+      xmlAddPrevSibling(before, item);
+
+      ++count;
+    }
+  return count;
+}
+
+static void clean_element(xmlNodePtr element, struct sanitize_mode *mode)
+{
   Dict *attributes;
 
   attributes = dict_get(mode->elements, (const char *)element->name);
@@ -33,34 +49,36 @@ static int clean_element(xmlNodePtr element, struct sanitize_mode *mode)
 	  
 	  xmlFree(value);
         }
-      return 1;
+      return;
     }
-  else
+
+  const char *rename_to = dict_get(mode->rename_elements, (const char *)element->name);
+
+  if (!rename_to)
     {
-      int insert_whitespace = NULL != array_find_not(mode->whitespace_elements, (array_item_predicate_t)strcmp, element->name);
-      int has_children = 0;
+      /* delete */
+      move_children_before(element, element);
+      xmlUnlinkNode(element);
+      xmlFreeNode(element);
 
-      if (insert_whitespace)
-	xmlAddPrevSibling(element, xmlNewText(BAD_CAST(" ")));
+      return;
+    }
 
-      for (item = element->children; item; item = next)
-        {
-          next = item->next;
-
-          xmlUnlinkNode(item);
-          xmlAddPrevSibling(element, item);
-          
-	  has_children = 1;
-        }
-      
-      if (insert_whitespace && has_children)
+  if (rename_to == Q_WHITESPACE)
+    {
+      xmlAddPrevSibling(element, xmlNewText(BAD_CAST(" ")));
+      if (move_children_before(element, element))
         xmlAddPrevSibling(element, xmlNewText(BAD_CAST(" ")));
       
       xmlUnlinkNode(element);
       xmlFreeNode(element);
 
-      return 0;
+      return;
     }
+
+  /* rename */
+  xmlNodeSetName(element, BAD_CAST(rename_to));
+  clean_element(element, mode); /* recursion */
 }
 
 static xmlNodePtr clean_node(xmlNodePtr node, struct sanitize_mode *mode)

@@ -20,6 +20,7 @@ static void free_check(struct Check *ch)
   free(ch->re);
 #endif
   regfree(&ch->preg);
+  free(ch);
 }
 
 /* ValueChecker is an alias to Array */

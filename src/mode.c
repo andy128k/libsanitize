@@ -6,30 +6,25 @@
 
 #include "mode.h"
 
-struct sanitize_mode *mode_new(int allow_comments,
-			       Dict *elements,
-			       Dict *common_attributes,
-			       Array *whitespace_elements)
+const char *Q_WHITESPACE = NULL;
+
+void mode_init_quarks(void)
+{
+  if (!Q_WHITESPACE)
+    Q_WHITESPACE = quark("--whitespace--");
+}
+
+struct sanitize_mode *mode_new(void)
 {
   struct sanitize_mode *mode;
 
+  mode_init_quarks();
+
   mode = malloc(sizeof(struct sanitize_mode));
-
-  mode->allow_comments = allow_comments;
-  if (elements)
-    mode->elements = elements;
-  else
-    mode->elements = dict_new((free_function_t)dict_free);
-
-  if (common_attributes)
-    mode->common_attributes = common_attributes;
-  else
-    mode->common_attributes = dict_new((free_function_t)value_checker_free);
-
-  if (whitespace_elements)
-    mode->whitespace_elements = whitespace_elements;
-  else
-    mode->whitespace_elements = array_new((free_function_t)free);
+  mode->allow_comments = 0;
+  mode->elements = dict_new((free_function_t)dict_free);
+  mode->common_attributes = dict_new((free_function_t)value_checker_free);
+  mode->rename_elements = dict_new((free_function_t)qfree);
 
   return mode;
 }
@@ -38,13 +33,33 @@ void mode_free(struct sanitize_mode *mode)
 {
   if (!mode)
     return;
-  if (mode->elements)
-    dict_free(mode->elements);
-  if (mode->common_attributes)
-    dict_free(mode->common_attributes);
-  if (mode->whitespace_elements)
-    array_free(mode->whitespace_elements);
+  dict_free(mode->elements);
+  dict_free(mode->common_attributes);
+  dict_free(mode->rename_elements);
   free(mode);
+}
+
+static const char *get_attribute_quark(xmlNode *node, const char *attr_name, const char *default_value)
+{
+  xmlAttrPtr attr;
+
+  for (attr = node->properties; attr; attr = attr->next)
+    if (!xmlStrcmp(attr->name, BAD_CAST(attr_name)))
+      {
+        xmlChar* value;
+        const char *result;
+
+        value = xmlNodeListGetString(node->doc, attr->children, 1);
+        if (*value)
+          result = quark((const char *)value);
+        else
+          result = default_value;
+        xmlFree(value);
+
+        return result;
+      }
+
+  return default_value;
 }
 
 static void mode_load_attributes(Dict *attributes, xmlNode *node)
@@ -59,17 +74,17 @@ static void mode_load_attributes(Dict *attributes, xmlNode *node)
 
       name_len = strlen((const char *)attr->name);
       if (name_len >= 4 && !strcmp((const char *)attr->name + name_len - 4, ".not"))
-	{
-	  name_len -= 4;
-	  inverted = 1;
-	}
+        {
+          name_len -= 4;
+          inverted = 1;
+        }
 
       vc = dict_getn(attributes, (const char *)attr->name, name_len);
       if (!vc)
-	{
-	  vc = value_checker_new();
-	  dict_replacen(attributes, (const char *)attr->name, name_len, vc);
-	}
+        {
+          vc = value_checker_new();
+          dict_replacen(attributes, (const char *)attr->name, name_len, vc);
+        }
 
       value = xmlNodeListGetString(node->doc, attr->children, 1);
       value_checker_add_regex(vc, (const char *)value, inverted);
@@ -83,11 +98,11 @@ struct sanitize_mode *mode_load(const char *filename)
   xmlNode *root_element, *node, *child;
   xmlAttrPtr attr;
   struct sanitize_mode *mode;
-  
+
   doc = xmlReadFile(filename, NULL, 0);
   if (doc == NULL)
     return NULL;
-  
+
   root_element = xmlDocGetRootElement(doc);
   if (strcmp((const char *)root_element->name, "mode"))
     {
@@ -95,51 +110,53 @@ struct sanitize_mode *mode_load(const char *filename)
       return NULL;
     }
 
-  mode = mode_new(0, NULL, NULL, NULL);
+  mode = mode_new();
 
   for (attr = root_element->properties; attr; attr = attr->next)
     if (!xmlStrcmp(attr->name, BAD_CAST("allow_comments")) ||
-	!xmlStrcmp(attr->name, BAD_CAST("allow-comments")))
+        !xmlStrcmp(attr->name, BAD_CAST("allow-comments")))
       {
-	xmlChar* value = xmlNodeListGetString(doc, attr->children, 1);
-	mode->allow_comments =
-	  !xmlStrcasecmp(value, BAD_CAST("1"))    ||
-	  !xmlStrcasecmp(value, BAD_CAST("yes"))  ||
-	  !xmlStrcasecmp(value, BAD_CAST("y"))    ||
-	  !xmlStrcasecmp(value, BAD_CAST("true")) ||
-	  !xmlStrcasecmp(value, BAD_CAST("t"))    ||
-	  !xmlStrcasecmp(value, BAD_CAST("on"));
-	xmlFree(value); 
+        xmlChar* value = xmlNodeListGetString(doc, attr->children, 1);
+        mode->allow_comments =
+          !xmlStrcasecmp(value, BAD_CAST("1"))    ||
+          !xmlStrcasecmp(value, BAD_CAST("yes"))  ||
+          !xmlStrcasecmp(value, BAD_CAST("y"))    ||
+          !xmlStrcasecmp(value, BAD_CAST("true")) ||
+          !xmlStrcasecmp(value, BAD_CAST("t"))    ||
+          !xmlStrcasecmp(value, BAD_CAST("on"));
+        xmlFree(value);
       }
-  
+
   for (node = root_element->children; node; node = node->next)
     {
       if (node->type != XML_ELEMENT_NODE)
-	continue;
+        continue;
 
       if (!xmlStrcmp(node->name, BAD_CAST("elements")))
-	{
-	  mode_load_attributes(mode->common_attributes, node);
+        {
+          mode_load_attributes(mode->common_attributes, node);
 
-	  for (child = node->children; child; child = child->next)
-	    if (child->type == XML_ELEMENT_NODE)
-	      {
-		Dict *attributes = dict_new((free_function_t)value_checker_free);
-		mode_load_attributes(attributes, child);
-		dict_replace(mode->elements, (const char *)child->name, attributes);
-	      }
-	}
-      else if (!xmlStrcmp(node->name, BAD_CAST("whitespace_elements")) ||
-	       !xmlStrcmp(node->name, BAD_CAST("whitespace-elements")))
-	{
-	  for (child = node->children; child; child = child->next)
-	    if (child->type == XML_ELEMENT_NODE)
-	      array_append(mode->whitespace_elements, strdup((const char *)child->name));
-	}
+          for (child = node->children; child; child = child->next)
+            if (child->type == XML_ELEMENT_NODE)
+              {
+                Dict *attributes = dict_new((free_function_t)value_checker_free);
+                mode_load_attributes(attributes, child);
+                dict_replace(mode->elements, (const char *)child->name, attributes);
+              }
+        }
+      else if (!xmlStrcmp(node->name, BAD_CAST("rename")))
+        {
+          const char *to = get_attribute_quark(node, "to", Q_WHITESPACE);
+
+          for (child = node->children; child; child = child->next)
+            if (child->type == XML_ELEMENT_NODE)
+              {
+                dict_replace(mode->rename_elements, (const char *)child->name, (char *)to);
+              }
+        }
     }
-  
+
   xmlFreeDoc(doc);
   return mode;
 }
-
 

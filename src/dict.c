@@ -2,18 +2,7 @@
 #include <string.h>
 #include "dict.h"
 
-#define HASH_SIZE (128)
-
-static unsigned hash_function(const char *str, size_t len)
-{
-  unsigned hash;
-  size_t i;
-
-  hash = 0;
-  for (i = 0; i < len; ++i)
-    hash = str[i] + 31 * hash;
-  return hash;
-}
+#define HASH_SIZE (97)
 
 struct HashValue
 {
@@ -67,11 +56,6 @@ void dict_free(Dict *dict)
     }
 }
 
-static inline size_t align_size(size_t num)
-{
-  return (num + 7) / 8 * 8;
-}
-
 static int dict_find(Dict *dict, const char *key, size_t key_len, struct Bucket **bucket, unsigned *index)
 {
   const unsigned hash = hash_function(key, key_len);
@@ -117,7 +101,7 @@ void dict_replacen(Dict *dict, const char *key, size_t key_len, void *value)
       /* grow bucket */
       if (bucket->count + 1 >= bucket->allocated)
 	{
-	  bucket->allocated = align_size(bucket->count + 1);
+	  bucket->allocated = align_size_8(bucket->count + 1);
 	  bucket->values = realloc(bucket->values, bucket->allocated * sizeof(struct HashValue));
 	}
 

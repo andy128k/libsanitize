@@ -1,7 +1,7 @@
 #ifndef SANITIZE_DICT_H_INCLUDED
 #define SANITIZE_DICT_H_INCLUDED
 
-#include "types.h"
+#include "common.h"
  
 typedef struct Dict Dict;
 

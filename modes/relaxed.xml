@@ -60,7 +60,7 @@
     <var/>
     <wbr/>
   </elements>
-  <whitespace-elements>
+  <rename to="">
     <address/>
     <article/>
     <aside/>
@@ -69,6 +69,6 @@
     <hr/>
     <nav/>
     <section/>
-  </whitespace-elements>
+  </rename>
 </mode>
 

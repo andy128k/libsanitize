@@ -340,6 +340,9 @@ int main(int argc, char *argv[])
 	 failed,
 	 failed * 100 / total);
 
+  xmlCleanupParser();
+  free_quarks();
+
   return failed;
 }
 

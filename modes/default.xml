@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mode>
-  <whitespace-elements>
+  <rename to="">
     <address/>
     <article/>
     <aside/>
@@ -27,6 +27,6 @@
     <pre/>
     <section/>
     <ul/>
-  </whitespace-elements>
+  </rename>
 </mode>
 

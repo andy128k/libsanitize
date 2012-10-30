@@ -33,7 +33,7 @@
     <ul/>
     <var/>
   </elements>
-  <whitespace-elements>
+  <rename>
     <address/>
     <article/>
     <aside/>
@@ -50,6 +50,6 @@
     <hr/>
     <nav/>
     <section/>
-  </whitespace-elements>
+  </rename>
 </mode>
 

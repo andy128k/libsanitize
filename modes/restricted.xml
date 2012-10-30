@@ -7,7 +7,7 @@
     <strong/>
     <u/>
   </elements>
-  <whitespace-elements>
+  <rename to="">
     <address/>
     <article/>
     <aside/>
@@ -34,6 +34,6 @@
     <pre/>
     <section/>
     <ul/>
-  </whitespace-elements>
+  </rename>
 </mode>
 

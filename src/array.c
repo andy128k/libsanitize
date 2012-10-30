@@ -1,11 +1,7 @@
 #include <stdlib.h>
+#include <string.h>
 #include <stdarg.h>
 #include "array.h"
-
-static inline size_t align_size(size_t num)
-{
-  return (num + 63) / 64 * 64;
-}
 
 Array *array_new(free_function_t free_item_func)
 {
@@ -45,7 +41,7 @@ void array_reserve(Array *arr, size_t count)
     return;
   if (arr->size + count >= arr->allocated)
     {
-      arr->allocated = align_size(arr->size + count);
+      arr->allocated = align_size_64(arr->size + count);
       arr->items = realloc(arr->items, arr->allocated * sizeof(void*));
     }
 }
@@ -86,6 +82,23 @@ void array_appendv(Array *arr, ...)
   va_start(args, arr);
   array_append_va(arr, args);
   va_end(args);
+}
+
+void array_insert(Array *arr, size_t index, void *item)
+{
+  if (!arr)
+    return;
+
+  array_reserve(arr, 1);
+  memmove(&arr->items[index + 1],
+	  &arr->items[index],
+	  arr->size - index);
+  arr->size++;
+
+  if (arr->free_item_func && arr->items[index])
+    arr->free_item_func(arr->items[index]);
+
+  arr->items[index] = item;
 }
 
 void array_clean(Array *arr)
@@ -134,5 +147,27 @@ void *array_find_not(Array *arr, array_item_predicate_t pred, const void *user_d
         return item;
     }
   return NULL;
+}
+
+size_t array_lower_bound(Array *arr, const void *value, less_function_t less)
+{
+  size_t first = 0;
+  size_t count = arr->size;
+
+  while (count > 0)
+  {
+    const size_t middle = first + count / 2;
+
+    if (less(arr->items[middle], value))
+      {
+	first = middle + 1;
+	count -= middle + 1;
+      }
+    else
+      {
+	count = middle;
+      }
+  }
+  return first;
 }
 
