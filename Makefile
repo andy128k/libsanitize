@@ -9,6 +9,7 @@ t/test-app: libsanitize.so
 
 test: t/test-app
 	./t/test-app
+	python t/test.py
 
 clean:
 	rm -f libsanitize.so t/test-app

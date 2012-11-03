@@ -1,3 +1,4 @@
 /libsanitize.so
 /t/test-app
+*.pyc
 
