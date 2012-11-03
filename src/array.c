@@ -30,7 +30,7 @@ void array_free(Array *arr)
     {
       array_clean(arr);
       if (arr->items)
-	free(arr->items);
+        free(arr->items);
       free(arr);
     }
 }
@@ -66,9 +66,9 @@ void array_append_va(Array *arr, va_list args)
     {
       arg = va_arg(args, void *);
       if (arg)
-	array_append(arr, arg);
+        array_append(arr, arg);
       else
-	break;
+        break;
     }
 }
 
@@ -91,8 +91,8 @@ void array_insert(Array *arr, size_t index, void *item)
 
   array_reserve(arr, 1);
   memmove(&arr->items[index + 1],
-	  &arr->items[index],
-	  arr->size - index);
+          &arr->items[index],
+          arr->size - index);
   arr->size++;
 
   if (arr->free_item_func && arr->items[index])
@@ -110,8 +110,8 @@ void array_clean(Array *arr)
     {
       size_t i;
       for (i = 0; i < arr->size; ++i)
-	if (arr->items[i])
-	  arr->free_item_func(arr->items[i]);
+        if (arr->items[i])
+          arr->free_item_func(arr->items[i]);
     }
 
   arr->size = 0;
@@ -156,16 +156,16 @@ size_t array_lower_bound(Array *arr, const void *value, less_function_t less)
 
   while (count > 0)
   {
-    const size_t middle = first + count / 2;
+    const size_t half = count / 2;
 
-    if (less(arr->items[middle], value))
+    if (less(arr->items[first + half], value))
       {
-	first = middle + 1;
-	count -= middle + 1;
+        first += half + 1;
+        count -= half + 1;
       }
     else
       {
-	count = middle;
+        count = half;
       }
   }
   return first;
