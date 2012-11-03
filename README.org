@@ -1,0 +1,4 @@
+* LibSanitize
+
+  This is a library for sanitization of HTML.
+
