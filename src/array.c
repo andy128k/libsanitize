@@ -13,17 +13,6 @@ Array *array_new(free_function_t free_item_func)
   return arr;
 }
 
-Array *array_newv(free_function_t free_item_func, ...)
-{
-  Array *arr = array_new(free_item_func);
-  va_list args;
-
-  va_start(args, free_item_func);
-  array_append_va(arr, args);
-  va_end(args);
-  return arr;
-}
-
 void array_free(Array *arr)
 {
   if (arr)
@@ -53,35 +42,6 @@ void array_append(Array *arr, void *item)
   array_reserve(arr, 1);
   arr->items[arr->size] = item;
   arr->size++;
-}
-
-void array_append_va(Array *arr, va_list args)
-{
-  void *arg;
-  
-  if (!arr)
-    return;
-  
-  while (1)
-    {
-      arg = va_arg(args, void *);
-      if (arg)
-        array_append(arr, arg);
-      else
-        break;
-    }
-}
-
-void array_appendv(Array *arr, ...)
-{
-  va_list args;
-
-  if (!arr)
-    return;
-
-  va_start(args, arr);
-  array_append_va(arr, args);
-  va_end(args);
 }
 
 void array_insert(Array *arr, size_t index, void *item)

@@ -15,12 +15,9 @@ struct Array
 };
 
 Array *array_new(free_function_t free_item_func);
-Array *array_newv(free_function_t free_item_func, ...);
 void array_free(Array *arr);
 void array_reserve(Array *arr, size_t count);
 void array_append(Array *arr, void *item);
-void array_append_va(Array *arr, va_list args);
-void array_appendv(Array *arr, ...);
 void array_insert(Array *arr, size_t index, void *item);
 void array_clean(Array *arr);
 
