@@ -25,15 +25,23 @@ class Sanitizer(object):
         cls.libsanitize.mode_load.argtypes = [ctypes.c_char_p]
         cls.libsanitize.mode_load.restype = ctypes.c_void_p
 
+        cls.libsanitize.mode_memory.argtypes = [ctypes.c_char_p]
+        cls.libsanitize.mode_memory.restype = ctypes.c_void_p
+
         cls.libsanitize.mode_free.argtypes = [ctypes.c_void_p]
         cls.libsanitize.mode_free.restype = None
 
         cls.libsanitize.sanitize.argtypes = [ctypes.c_char_p, ctypes.c_void_p]
         cls.libsanitize.sanitize.restype = ctypes.POINTER(ctypes.c_char)
 
-    def __init__(self, path):
+    def __init__(self, path=None, data=None):
         self.load_libraries()
-        self.mode = self.libsanitize.mode_load(path)
+        if path:
+            self.mode = self.libsanitize.mode_load(path)
+        elif data:
+            self.mode = self.libsanitize.mode_memory(data)
+        else:
+            raise Exception("No path nor data is given.")
 
     def __del__(self):
         if self.mode:

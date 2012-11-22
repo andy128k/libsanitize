@@ -52,11 +52,20 @@ static void clean_element(xmlNodePtr element, struct sanitize_mode *mode)
       return;
     }
 
+  if (dict_get(mode->delete_elements, (const char *)element->name))
+    {
+      /* delete with children */
+      xmlUnlinkNode(element);
+      xmlFreeNode(element);
+
+      return;
+    }
+
   const char *rename_to = dict_get(mode->rename_elements, (const char *)element->name);
 
   if (!rename_to)
     {
-      /* delete */
+      /* remove */
       move_children_before(element, element);
       xmlUnlinkNode(element);
       xmlFreeNode(element);

@@ -315,10 +315,36 @@ if __name__ == '__main__':
          "foo<hr>bar<hr>baz",
          "foo bar baz")
 
+    # in-memory
+
+    in_memory_sanitizer = sanitize.Sanitizer(data='''<?xml version="1.0" encoding="UTF-8"?>
+        <mode>
+            <elements>
+                <b/>
+                <span/>
+            </elements>
+            <delete>
+                <script/>
+                <style/>
+            </delete>
+            <rename>
+                <br/>
+            </rename>
+            <rename to="span">
+                <strong/>
+            </rename>
+        </mode>''')
+
+    delete_html = "<b>Lo<!-- comment -->rem</b> <a href=\"javascript:pants\" title=\"foo\">ipsum</a> <a href=\"http://foo.com/\"><strong>dolor</strong></a> sit<br/>amet <script>alert(\"hello world\")</script>"
+
+    test("delete", in_memory_sanitizer, delete_html,
+         "<b>Lorem</b> ipsum <span>dolor</span> sit amet ")
+
     del default_sanitizer
     del basic_sanitizer
     del relaxed_sanitizer
     del restricted_sanitizer
+    del in_memory_sanitizer
 
     total = passed + failed
     print u'Did %d checks.\n  Pass: %3d (%3d%%)\n  Fail: %3d (%3d%%)\n' % (

@@ -24,7 +24,7 @@ static void test(const char *testname, struct sanitize_mode *mode, const char *i
 
 int main(int argc, char *argv[])
 {
-  struct sanitize_mode *default_mode, *basic_mode, *relaxed_mode, *restricted_mode;
+  struct sanitize_mode *default_mode, *basic_mode, *relaxed_mode, *restricted_mode, *in_memory_mode;
 
   default_mode    = mode_load("modes/default.xml");
   basic_mode      = mode_load("modes/basic.xml");
@@ -325,10 +325,37 @@ int main(int argc, char *argv[])
        "foo<hr>bar<hr>baz",
        "foo bar baz");
 
+
+  /* in-memory */
+
+  in_memory_mode = mode_memory("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+			       "<mode allow-comments='yes'>"
+			       "  <elements>"
+			       "    <b/>"
+			       "    <span/>"
+			       "  </elements>"
+			       "  <delete>"
+			       "    <script/>"
+			       "    <style/>"
+			       "  </delete>"
+			       "  <rename>"
+			       "    <br/>"
+			       "  </rename>"
+			       "  <rename to='span'>"
+			       "    <strong/>"
+			       "  </rename>"
+			       "</mode>");
+
+  const char *delete_html = "<b>Lo<!-- comment -->rem</b> <a href=\"javascript:pants\" title=\"foo\">ipsum</a> <a href=\"http://foo.com/\"><strong>dolor</strong></a> sit<br/>amet <script>alert(\"hello world\")</script>";
+  
+  test("delete", in_memory_mode, delete_html,
+       "<b>Lo<!-- comment -->rem</b> ipsum <span>dolor</span> sit amet ");
+
   mode_free(default_mode);
   mode_free(basic_mode);
   mode_free(relaxed_mode);
   mode_free(restricted_mode);
+  mode_free(in_memory_mode);
 
   int total = passed + failed;
   printf("Did %d checks.\n"

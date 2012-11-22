@@ -24,6 +24,7 @@ struct sanitize_mode *mode_new(void)
   mode->allow_comments = 0;
   mode->elements = dict_new((free_function_t)dict_free);
   mode->common_attributes = dict_new((free_function_t)value_checker_free);
+  mode->delete_elements = dict_new(NULL);
   mode->rename_elements = dict_new((free_function_t)qfree);
 
   return mode;
@@ -35,6 +36,7 @@ void mode_free(struct sanitize_mode *mode)
     return;
   dict_free(mode->elements);
   dict_free(mode->common_attributes);
+  dict_free(mode->delete_elements);
   dict_free(mode->rename_elements);
   free(mode);
 }
@@ -92,23 +94,15 @@ static void mode_load_attributes(Dict *attributes, xmlNode *node)
     }
 }
 
-struct sanitize_mode *mode_load(const char *filename)
+static struct sanitize_mode *mode_deserialize(xmlDocPtr doc)
 {
-  xmlDocPtr doc;
   xmlNode *root_element, *node, *child;
   xmlAttrPtr attr;
   struct sanitize_mode *mode;
 
-  doc = xmlReadFile(filename, NULL, 0);
-  if (doc == NULL)
-    return NULL;
-
   root_element = xmlDocGetRootElement(doc);
   if (strcmp((const char *)root_element->name, "mode"))
-    {
-      xmlFreeDoc(doc);
-      return NULL;
-    }
+    return NULL;
 
   mode = mode_new();
 
@@ -154,8 +148,33 @@ struct sanitize_mode *mode_load(const char *filename)
                 dict_replace(mode->rename_elements, (const char *)child->name, (char *)to);
               }
         }
+      else if (!xmlStrcmp(node->name, BAD_CAST("delete")))
+        {
+          for (child = node->children; child; child = child->next)
+            if (child->type == XML_ELEMENT_NODE)
+              dict_replace(mode->delete_elements, (const char *)child->name, (char *)Q_WHITESPACE);
+        }
     }
 
+  return mode;
+}
+
+struct sanitize_mode *mode_load(const char *filename)
+{
+  xmlDocPtr doc = xmlReadFile(filename, NULL, 0);
+  if (doc == NULL)
+    return NULL;
+  struct sanitize_mode *mode = mode_deserialize(doc);
+  xmlFreeDoc(doc);
+  return mode;
+}
+
+struct sanitize_mode *mode_memory(const char *data)
+{
+  xmlDocPtr doc = xmlReadDoc(BAD_CAST(data), NULL, NULL, 0);
+  if (doc == NULL)
+    return NULL;
+  struct sanitize_mode *mode = mode_deserialize(doc);
   xmlFreeDoc(doc);
   return mode;
 }
