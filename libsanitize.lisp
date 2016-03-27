@@ -18,6 +18,11 @@
 
 (use-foreign-library libsanitize)
 
+#+sbcl
+(pushnew (lambda ()
+           (use-foreign-library libsanitize))
+         sb-ext:*init-hooks*)
+
 (defcfun "mode_load" :pointer
   (path :string))
 
