@@ -1,5 +1,8 @@
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
+
+#include <libxml/parser.h>
 
 #include <sanitize.h>
 

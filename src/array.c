@@ -52,11 +52,8 @@ void array_insert(Array *arr, size_t index, void *item)
   array_reserve(arr, 1);
   memmove(&arr->items[index + 1],
           &arr->items[index],
-          arr->size - index);
+          (arr->size - index) * sizeof(void*));
   arr->size++;
-
-  if (arr->free_item_func && arr->items[index])
-    arr->free_item_func(arr->items[index]);
 
   arr->items[index] = item;
 }
