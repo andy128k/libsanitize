@@ -12,10 +12,6 @@
   (:unix "libsanitize.so")
   (t (:default "libsanitize.so")))
 
-(pushnew (asdf:component-pathname (asdf:find-system :libsanitize))
-	 *foreign-library-directories*
-	 :test #'equal)
-
 (use-foreign-library libsanitize)
 
 #+sbcl
