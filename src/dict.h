@@ -2,6 +2,7 @@
 #define SANITIZE_DICT_H_INCLUDED
 
 #include "common.h"
+#include "array.h"
  
 typedef struct Dict Dict;
 
@@ -11,6 +12,7 @@ void dict_replace(Dict *dict, const char *key, void *value);
 void dict_replacen(Dict *dict, const char *key, size_t key_len, void *value);
 void *dict_get(Dict *dict, const char *key);
 void *dict_getn(Dict *dict, const char *key, size_t key_len);
+Array *dict_keys(Dict *dict);
 
 #endif
 

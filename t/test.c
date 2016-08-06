@@ -27,12 +27,13 @@ static void test(const char *testname, struct sanitize_mode *mode, const char *i
 
 int main(int argc, char *argv[])
 {
-  struct sanitize_mode *default_mode, *basic_mode, *relaxed_mode, *restricted_mode, *in_memory_mode;
+  struct sanitize_mode *default_mode, *basic_mode, *relaxed_mode, *restricted_mode, *untrusted_mode, *in_memory_mode;
 
   default_mode    = mode_load("modes/default.xml");
   basic_mode      = mode_load("modes/basic.xml");
   relaxed_mode    = mode_load("modes/relaxed.xml");
   restricted_mode = mode_load("modes/restricted.xml");
+  untrusted_mode  = mode_load("modes/untrusted.xml");
 
   /* basic */
 
@@ -94,6 +95,9 @@ int main(int argc, char *argv[])
 
   test("malicious-basic", basic_mode, malicious_html,
        "<b>Lorem</b> <a>ipsum</a> <a href=\"http://foo.com/\"><strong>dolor</strong></a> sit<br>amet script&gt;alert(\"hello world\");");
+
+  test("malicious-basic", untrusted_mode, malicious_html,
+       "<b>Lorem</b> <a rel=\"noreferrer noopener\" target=\"_blank\">ipsum</a> <a href=\"http://foo.com/\" rel=\"noreferrer noopener\" target=\"_blank\"><strong>dolor</strong></a> sit amet script&gt;alert(\"hello world\");");
 
   test("malicious-relaxed", relaxed_mode, malicious_html,
        "<b>Lorem</b> <a title=\"foo\">ipsum</a> <a href=\"http://foo.com/\"><strong>dolor</strong></a> sit<br>amet script&gt;alert(\"hello world\");");
@@ -358,6 +362,7 @@ int main(int argc, char *argv[])
   mode_free(basic_mode);
   mode_free(relaxed_mode);
   mode_free(restricted_mode);
+  mode_free(untrusted_mode);
   mode_free(in_memory_mode);
 
   int total = passed + failed;

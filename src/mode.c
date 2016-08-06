@@ -62,6 +62,13 @@ static const char *get_attribute_quark(xmlNode *node, const char *attr_name, con
   return default_value;
 }
 
+static int str_ends_with(const char *string, const char *suffix)
+{
+  const int string_length = strlen(string);
+  const int suffix_length = strlen(suffix);
+  return string_length >= suffix_length && !strcmp(string + string_length - suffix_length, suffix);
+}
+
 static void mode_load_attributes(ElementSanitizer *element_sanitizer, xmlNode *node)
 {
   xmlAttrPtr attr;
@@ -69,20 +76,30 @@ static void mode_load_attributes(ElementSanitizer *element_sanitizer, xmlNode *n
     {
       char *attribute;
       size_t name_len;
-      int inverted = 0;
-      xmlChar* re;
+      xmlChar* value;
 
       attribute = strdup((const char *)attr->name);
-      name_len = strlen((const char *)attr->name);
-      if (name_len >= 4 && !strcmp((const char *)attr->name + name_len - 4, ".not"))
+      name_len = strlen(attribute);
+      value = xmlNodeListGetString(node->doc, attr->children, 1);
+
+      if (str_ends_with(attribute, ".set"))
         {
           attribute[name_len - 4] = '\0';
-          inverted = 1;
+          element_sanitizer_add_mandatory_attribute(element_sanitizer, attribute, (const char *)value);
+        }
+      else
+        {
+          int inverted = 0;
+          if (str_ends_with(attribute, ".not"))
+            {
+              attribute[name_len - 4] = '\0';
+              inverted = 1;
+            }
+
+          element_sanitizer_add_regex(element_sanitizer, attribute, (const char *)value, inverted);
         }
 
-      re = xmlNodeListGetString(node->doc, attr->children, 1);
-      element_sanitizer_add_regex(element_sanitizer, attribute, (const char *)re, inverted);
-      xmlFree(re);
+      xmlFree(value);
       free(attribute);
     }
 }

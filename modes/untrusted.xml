@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mode>
+  <elements>
+    <a href="^(ftp:|http:|https:|mailto:)" href.not="^[^/]+[[:space:]]*:" target.set="_blank" rel.set="noreferrer noopener" />
+    <b/>
+    <em/>
+    <i/>
+    <strong/>
+    <u/>
+  </elements>
+  <rename to="">
+    <address/>
+    <article/>
+    <aside/>
+    <blockquote/>
+    <br/>
+    <dd/>
+    <div/>
+    <dl/>
+    <dt/>
+    <footer/>
+    <h1/>
+    <h2/>
+    <h3/>
+    <h4/>
+    <h5/>
+    <h6/>
+    <header/>
+    <hgroup/>
+    <hr/>
+    <li/>
+    <nav/>
+    <ol/>
+    <p/>
+    <pre/>
+    <section/>
+    <ul/>
+  </rename>
+</mode>
+

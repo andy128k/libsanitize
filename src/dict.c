@@ -131,3 +131,19 @@ void *dict_getn(Dict *dict, const char *key, size_t key_len)
     }
 }
 
+Array *dict_keys(Dict *dict)
+{
+  Array *keys = array_new((free_function_t)free);
+
+  unsigned i, j;
+
+  for (i = 0; i < HASH_SIZE; ++i)
+    {
+      struct Bucket *bucket = &dict->data[i];
+
+      for (j = 0; j < bucket->count; ++j)
+	array_append(keys, strdup(bucket->values[j].key));
+    }
+
+  return keys;
+}

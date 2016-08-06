@@ -45,6 +45,24 @@ static void clean_element(xmlNodePtr element, struct sanitize_mode *mode)
 
 	  xmlFree(value);
         }
+
+      /* mandatory attributes */
+      {
+        Dict *mandatory_attributes = element_sanitizer_get_mandatory_attributes(element_sanitizer);
+        Array *mandatory_attributes_names = dict_keys(mandatory_attributes);
+        size_t i;
+
+        for (i = 0; i < mandatory_attributes_names->size; ++i)
+          {
+            const char *attribute = mandatory_attributes_names->items[i];
+            const char *value = dict_get(mandatory_attributes, attribute);
+
+            xmlSetProp(element, BAD_CAST(attribute), BAD_CAST(value));
+          }
+
+        array_free(mandatory_attributes_names);
+      }
+
       return;
     }
 
