@@ -1,5 +1,5 @@
-SOURCES=src/sanitize.c src/array.c src/dict.c src/mode.c src/value_checker.c src/quarks.c src/common.c
-HEADERS=src/sanitize.h src/array.h src/dict.h src/mode.h src/value_checker.h src/quarks.h src/common.h
+SOURCES=src/sanitize.c src/array.c src/dict.c src/mode.c src/element_sanitizer.c src/value_checker.c src/quarks.c src/common.c
+HEADERS=src/sanitize.h src/array.h src/dict.h src/mode.h src/element_sanitizer.h src/value_checker.h src/quarks.h src/common.h
 
 libsanitize.so: $(HEADERS) $(SOURCES)
 	gcc -g -Wall -fPIC -shared -o libsanitize.so `pkg-config --cflags --libs libxml-2.0` $(SOURCES)

@@ -23,30 +23,26 @@ static unsigned move_children_before(xmlNodePtr element, xmlNodePtr before)
 
 static void clean_element(xmlNodePtr element, struct sanitize_mode *mode)
 {
-  Dict *attributes;
+  ElementSanitizer *element_sanitizer;
 
-  attributes = dict_get(mode->elements, (const char *)element->name);
+  element_sanitizer = dict_get(mode->elements, (const char *)element->name);
 
-  if (attributes)
+  if (element_sanitizer)
     {
       /* element is allowed */
 
       xmlAttrPtr attr, next;
-      ValueChecker *vc1, *vc2;
       xmlChar *value;
       for (attr = element->properties; attr; attr = next)
         {
           next = attr->next;
 	  value = xmlNodeListGetString(element->doc, attr->children, 1);
 
-	  vc1 = dict_get(attributes, (const char *)attr->name);
-	  vc2 = dict_get(mode->common_attributes, (const char *)attr->name);
-
-	  if (!(value_checker_check(vc1, (const char *)value) || value_checker_check(vc2, (const char *)value)))
+	  if (!element_sanitizer_is_valid(element_sanitizer, (const char *)attr->name,(const char *)value))
 	    {
 	      xmlUnsetProp(element, attr->name);
 	    }
-	  
+
 	  xmlFree(value);
         }
       return;

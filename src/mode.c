@@ -22,8 +22,7 @@ struct sanitize_mode *mode_new(void)
 
   mode = malloc(sizeof(struct sanitize_mode));
   mode->allow_comments = 0;
-  mode->elements = dict_new((free_function_t)dict_free);
-  mode->common_attributes = dict_new((free_function_t)value_checker_free);
+  mode->elements = dict_new((free_function_t)element_sanitizer_free);
   mode->delete_elements = dict_new(NULL);
   mode->rename_elements = dict_new((free_function_t)qfree);
 
@@ -35,7 +34,6 @@ void mode_free(struct sanitize_mode *mode)
   if (!mode)
     return;
   dict_free(mode->elements);
-  dict_free(mode->common_attributes);
   dict_free(mode->delete_elements);
   dict_free(mode->rename_elements);
   free(mode);
@@ -64,33 +62,28 @@ static const char *get_attribute_quark(xmlNode *node, const char *attr_name, con
   return default_value;
 }
 
-static void mode_load_attributes(Dict *attributes, xmlNode *node)
+static void mode_load_attributes(ElementSanitizer *element_sanitizer, xmlNode *node)
 {
   xmlAttrPtr attr;
   for (attr = node->properties; attr; attr = attr->next)
     {
+      char *attribute;
       size_t name_len;
       int inverted = 0;
-      ValueChecker *vc;
-      xmlChar* value;
+      xmlChar* re;
 
+      attribute = strdup((const char *)attr->name);
       name_len = strlen((const char *)attr->name);
       if (name_len >= 4 && !strcmp((const char *)attr->name + name_len - 4, ".not"))
         {
-          name_len -= 4;
+          attribute[name_len - 4] = '\0';
           inverted = 1;
         }
 
-      vc = dict_getn(attributes, (const char *)attr->name, name_len);
-      if (!vc)
-        {
-          vc = value_checker_new();
-          dict_replacen(attributes, (const char *)attr->name, name_len, vc);
-        }
-
-      value = xmlNodeListGetString(node->doc, attr->children, 1);
-      value_checker_add_regex(vc, (const char *)value, inverted);
-      xmlFree(value);
+      re = xmlNodeListGetString(node->doc, attr->children, 1);
+      element_sanitizer_add_regex(element_sanitizer, attribute, (const char *)re, inverted);
+      xmlFree(re);
+      free(attribute);
     }
 }
 
@@ -128,14 +121,13 @@ static struct sanitize_mode *mode_deserialize(xmlDocPtr doc)
 
       if (!xmlStrcmp(node->name, BAD_CAST("elements")))
         {
-          mode_load_attributes(mode->common_attributes, node);
-
           for (child = node->children; child; child = child->next)
             if (child->type == XML_ELEMENT_NODE)
               {
-                Dict *attributes = dict_new((free_function_t)value_checker_free);
-                mode_load_attributes(attributes, child);
-                dict_replace(mode->elements, (const char *)child->name, attributes);
+                ElementSanitizer *element_sanitizer = element_sanitizer_new();
+                mode_load_attributes(element_sanitizer, node);  /* common attributes */
+                mode_load_attributes(element_sanitizer, child);
+                dict_replace(mode->elements, (const char *)child->name, element_sanitizer);
               }
         }
       else if (!xmlStrcmp(node->name, BAD_CAST("rename")))

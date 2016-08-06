@@ -3,6 +3,7 @@
 
 #include "array.h"
 #include "dict.h"
+#include "element_sanitizer.h"
 #include "value_checker.h"
 #include "quarks.h"
 
@@ -16,8 +17,7 @@ void mode_init_quarks(void);
 struct sanitize_mode
 {
   int allow_comments;
-  Dict *elements;               /* tag name --> dict of attributes (attr name --> value checker) */
-  Dict *common_attributes;      /* attr name --> value checker */
+  Dict *elements;               /* tag name --> element sanitizer */
   Dict *delete_elements;        /* set */
   Dict *rename_elements;
 };
